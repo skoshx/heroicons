@@ -5,6 +5,7 @@ const rimraf = promisify(require('rimraf'))
 const svgr = require('@svgr/core').default
 const babel = require('@babel/core')
 const { compile: compileVue } = require('@vue/compiler-dom')
+const { compile: compileSvelte } = require('svelte/compiler');
 
 let transform = {
   react: async (svg, componentName, format) => {
@@ -44,6 +45,42 @@ let transform = {
       )
       .replace('export function render', 'module.exports = function render')
   },
+  svelte: (svg, componentName, format) => {
+    svg = transformSvgForSvelte(svg);
+    const { js } = compileSvelte(svg, { format });
+    const { code } = js;
+
+    if (format === 'esm') {
+      return code.replace('export function', 'export default function')
+    }
+
+    return code
+      .replace(
+        /import\s+\{\s*([^}]+)\s*\}\s+from\s+(['"])(.*?)\2/,
+        (_match, imports, _quote, mod) => {
+          let newImports = imports
+            .split(',')
+            .map((i) => i.trim().replace(/\s+as\s+/, ': '))
+            .join(', ')
+
+          return `const { ${newImports} } = require("${mod}")`
+        }
+      )
+  }
+}
+
+function transformSvgForSvelte(svg) {
+  svg = svg.replace('xmlns="http://www.w3.org/2000/svg"', 'xmlns="http://www.w3.org/2000/svg" class={classes} {style}');
+  
+  return `
+  <script>
+    let classes = '';
+    export let style = '';
+    export { classes as class };
+  </script>
+
+  ${svg}
+  `;
 }
 
 async function getIcons(style) {
@@ -58,16 +95,21 @@ async function getIcons(style) {
   )
 }
 
-function exportAll(icons, format, includeExtension = true) {
+function exportAll(icons, format, extension = '.js') {
   return icons
     .map(({ componentName }) => {
-      let extension = includeExtension ? '.js' : ''
-      if (format === 'esm') {
+      if (format === 'esm' || extension === '.svelte') {
         return `export { default as ${componentName} } from './${componentName}${extension}'`
       }
       return `module.exports.${componentName} = require("./${componentName}${extension}")`
     })
     .join('\n')
+}
+
+function getTypes(package, componentName) {
+  if (package === 'svelte') return `import { SvelteComponentTyped } from 'svelte';\nexport default class ${componentName} extends SvelteComponentTyped<svelte.JSX.HTMLAttributes<HTMLOrSVGElement>> {}`;
+  else if (package === 'react') return `import * as React from 'react';\ndeclare function ${componentName}(props: React.ComponentProps<'svg'>): JSX.Element;\nexport default ${componentName};\n`;
+  else return `export default import("vue").DefineComponent;`
 }
 
 async function buildIcons(package, style, format) {
@@ -83,10 +125,12 @@ async function buildIcons(package, style, format) {
   await Promise.all(
     icons.flatMap(async ({ componentName, svg }) => {
       let content = await transform[package](svg, componentName, format)
-      let types =
-        package === 'react'
-          ? `import * as React from 'react';\ndeclare function ${componentName}(props: React.ComponentProps<'svg'>): JSX.Element;\nexport default ${componentName};\n`
-          : `export default import("vue").DefineComponent;`
+      let types = getTypes(package, componentName);
+
+      if (package === 'svelte') {
+        const code = transformSvgForSvelte(svg, style); // Create .svelte files for SSR
+        fs.writeFile(`${outDir}/${componentName}.svelte`, code, 'utf8');
+      }
 
       return [
         fs.writeFile(`${outDir}/${componentName}.js`, content, 'utf8'),
@@ -95,9 +139,9 @@ async function buildIcons(package, style, format) {
     })
   )
 
-  await fs.writeFile(`${outDir}/index.js`, exportAll(icons, format), 'utf8')
+  await fs.writeFile(`${outDir}/index.js`, exportAll(icons, format, package === 'svelte' ? '.svelte' : '.js'), 'utf8')
 
-  await fs.writeFile(`${outDir}/index.d.ts`, exportAll(icons, 'esm', false), 'utf8')
+  await fs.writeFile(`${outDir}/index.d.ts`, exportAll(icons, 'esm', ''), 'utf8')
 }
 
 function main(package) {
