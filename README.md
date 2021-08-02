@@ -109,7 +109,7 @@ npm install @heroicons/svelte
 
 Now each icon can be imported individually as a Svelte component:
 
-```sv
+```svelte
 <script>
   import { BeakerIcon } from '@heroicons/svelte/solid'
 </script>
