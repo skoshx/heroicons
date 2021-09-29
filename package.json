@@ -1,10 +1,11 @@
 {
   "name": "heroicons",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "MIT",
   "files": [
     "outline/",
-    "solid/"
+    "solid/",
+    "README.md"
   ],
   "scripts": {
     "prepublishOnly": "npm run build",
