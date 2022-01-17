@@ -1,1 +1,1 @@
-{"module": "./esm/index.js"}
+{"module": "./esm/index.js", "type": "module"}

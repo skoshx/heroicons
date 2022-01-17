@@ -73,14 +73,12 @@ function transformSvgForSvelte(svg) {
   svg = svg.replace('xmlns="http://www.w3.org/2000/svg"', 'xmlns="http://www.w3.org/2000/svg" class={classes} {style}');
   
   return `
-  <script>
-    let classes = '';
-    export let style = '';
-    export { classes as class };
-  </script>
-
-  ${svg}
-  `;
+<script>
+  let classes = '';
+  export let style = '';
+  export { classes as class };
+</script>
+${svg}`;
 }
 
 async function getIcons(style) {
@@ -154,9 +152,9 @@ function main(package) {
         buildIcons(package, 'solid', 'cjs'),
         buildIcons(package, 'outline', 'esm'),
         buildIcons(package, 'outline', 'cjs'),
-        fs.writeFile(`./${package}/outline/package.json`, `{"module": "./esm/index.js"}`, 'utf8'),
+        fs.writeFile(`./${package}/outline/package.json`, `{"module": "./esm/index.js", "type": "module"}`, 'utf8'),
         fs.writeFile(`./${package}/outline/esm/package.json`, `{"type": "module"}`, 'utf8'),
-        fs.writeFile(`./${package}/solid/package.json`, `{"module": "./esm/index.js"}`, 'utf8'),
+        fs.writeFile(`./${package}/solid/package.json`, `{"module": "./esm/index.js", "type": "module"}`, 'utf8'),
         fs.writeFile(`./${package}/solid/esm/package.json`, `{"type": "module"}`, 'utf8'),
       ])
     )
