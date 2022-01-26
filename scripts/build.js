@@ -131,7 +131,7 @@ async function buildIcons(package, style, format) {
       }
 
       return [
-        fs.writeFile(`${outDir}/${componentName}.js`, content, 'utf8'),
+        // fs.writeFile(`${outDir}/${componentName}.js`, content, 'utf8'),
         ...(types ? [fs.writeFile(`${outDir}/${componentName}.d.ts`, types, 'utf8')] : []),
       ]
     })
@@ -139,7 +139,7 @@ async function buildIcons(package, style, format) {
 
   await fs.writeFile(`${outDir}/index.js`, exportAll(icons, format, package === 'svelte' ? '.svelte' : '.js'), 'utf8')
 
-  await fs.writeFile(`${outDir}/index.d.ts`, exportAll(icons, 'esm', ''), 'utf8')
+  await fs.writeFile(`${outDir}/index.d.ts`, exportAll(icons, 'esm', package === 'svelte' ? '.svelte' : '.js'), 'utf8')
 }
 
 function main(package) {
