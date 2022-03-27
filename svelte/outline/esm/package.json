@@ -1,1 +1,5 @@
-{"type": "module"}
+{
+  "module": "./index.js",
+  "svelte": "./index.js",
+  "sideEffects": false
+}

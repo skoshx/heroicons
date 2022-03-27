@@ -153,6 +153,7 @@ async function buildIcons(package, style, format) {
 async function main(package) {
   const cjsPackageJson = { module: './esm/index.js', sideEffects: false }
   const esmPackageJson = { type: 'module', sideEffects: false }
+  const sveltePackageJson = { module: './index.js', svelte: './index.js', sideEffects: false };
 
   console.log(`Building ${package} package...`)
 
@@ -166,8 +167,16 @@ async function main(package) {
     ensureWriteJson(`./${package}/outline/package.json`, cjsPackageJson),
     ensureWriteJson(`./${package}/outline/esm/package.json`, esmPackageJson),
     ensureWriteJson(`./${package}/solid/package.json`, cjsPackageJson),
-    ensureWriteJson(`./${package}/solid/esm/package.json`, esmPackageJson),
+    ensureWriteJson(`./${package}/solid/esm/package.json`, esmPackageJson)
   ])
+  if (package === 'svelte') {
+    await Promise.all([
+      ensureWriteJson(`./${package}/outline/esm/package.json`, sveltePackageJson),
+      ensureWriteJson(`./${package}/outline/package.json`, sveltePackageJson),
+      ensureWriteJson(`./${package}/solid/esm/package.json`, sveltePackageJson),
+      ensureWriteJson(`./${package}/solid/package.json`, sveltePackageJson)
+    ])
+  }
 
   return console.log(`Finished building ${package} package.`)
 }
